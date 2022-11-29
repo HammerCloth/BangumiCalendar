@@ -25,7 +25,7 @@ public enum Type {
         return name;
     }
 
-    public Type getType(String name) {
+    public static Type getType(String name) {
         switch (name) {
             case "原创动画":
                 return Original;

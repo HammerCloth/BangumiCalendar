@@ -2,10 +2,15 @@ package com.syx.bangumiCalender.dao.impl;
 
 import com.syx.bangumiCalender.dao.BangumiData;
 import com.syx.bangumiCalender.pojo.Bangumi;
+import com.syx.bangumiCalender.pojo.Type;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -20,7 +25,49 @@ public class DataFromYuc implements BangumiData {
 
     @Override
     public List<Bangumi> getData() {
+        Document document = getDocument();
+        return ParseDocument(document);
+    }
 
+    private List<Bangumi> ParseDocument(Document doc) {
+        System.out.println(doc.select(".post-title").text());
+        Elements body = doc.select(".post-body");
+        Elements bangumiItems = body.select("div[style=float:left],div[style=float:left]+div");
+        Iterator<Element> iterator = bangumiItems.iterator();
+        List<Bangumi> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+            Element sideDiv = iterator.next();
+            String coverUrl = sideDiv.select("img").attr("src");//番剧封面
+
+            Element div = iterator.next();
+            int sequenceSize = 10;
+            String titleCN = div.select(genSequence("p.title_cn_r", sequenceSize)).text();
+            String titleJP = div.select(genSequence("p.title_jp_r", sequenceSize)).text();
+            String type = div.select(genSequence("td.type_b_r", sequenceSize)).text();
+            String tags = div.select(genSequence("td.type_tag_r", sequenceSize)).text();
+            String staff = div.select(genSequence("td.staff_r", sequenceSize)).text();
+            String casts = div.select(genSequence("td.cast_r", sequenceSize)).text();
+            String broadcast = div.select(genSequence("p.broadcast_r", sequenceSize)).text();
+            String broadcaseRemark = div.select(genSequence("p.broadcast_ex_r", sequenceSize)).text();
+
+            Bangumi temp = new Bangumi(
+                    coverUrl, titleCN, titleJP,
+                    Type.getType(type), tags, staff, casts,
+                    null, null, broadcast, broadcaseRemark);
+
+            list.add(temp);
+        }
+        return list;
+    }
+
+    private String genSequence(String patten, int size) {
+        StringBuffer res = new StringBuffer(patten);
+        for (int i = 1; i <= size; i++) {
+            res.append(",");
+            res.append(patten);
+            res.append(i + "");
+        }
+        return res.toString();
     }
 
     //重试计数器
